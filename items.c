@@ -36,10 +36,16 @@ typedef struct {
     uint64_t evicted_unfetched;
 } itemstats_t;
 
+typedef struct {
+    item *items[10];
+    uint64_t items_in;
+} cachestats_t;
+
 static item *heads[LARGEST_ID];
 static item *tails[LARGEST_ID];
 static itemstats_t itemstats[LARGEST_ID];
 static unsigned int sizes[LARGEST_ID];
+static cachestats_t cachestats;
 
 void item_stats_reset(void) {
     mutex_lock(&cache_lock);
@@ -518,9 +524,20 @@ void do_item_stats_sizes(ADD_STAT add_stats, void *c) {
     add_stats(NULL, 0, NULL, 0, c);
 }
 
+bool accel_key_decision(const char *key, const size_t nkey, const uint32_t hv) {
+    return true;
+}
+
+void push_to_accel(const char *key, const size_t nkey, const uint32_t hv) {
+    printf("Pushed to accelerator %s, %zu", key, cachestats.items_in);
+}
+
 /** wrapper around assoc_find which does the lazy expiration logic */
 item *do_item_get(const char *key, const size_t nkey, const uint32_t hv) {
     //mutex_lock(&cache_lock);
+    if (accel_key_decision(key, nkey, hv)) {
+        push_to_accel(key, nkey, hv);
+    }
     item *it = assoc_find(key, nkey, hv);
     if (it != NULL) {
         refcount_incr(&it->refcount);
