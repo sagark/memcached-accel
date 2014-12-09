@@ -23,6 +23,11 @@
 
 #include "sasl_defs.h"
 
+// ACCEL
+#include "accel-inst.h"
+#include "accel.h"
+
+
 /** Maximum length of a key. */
 #define KEY_MAX_LENGTH 250
 
