@@ -547,6 +547,7 @@ static void push_to_accel(int i) {
     size_t nkey = cachestats.nkeys[i];
     uint32_t hv = cachestats.hvs[i];
     uint8_t count = cachestats.counts[i];
+    void *data;
 
     if (count > COUNT_MAX)
 	count = COUNT_MAX;
@@ -556,14 +557,16 @@ static void push_to_accel(int i) {
         syslog(LOG_WARNING, "Could not find value for key %s\n", key);
         return;
     }
+    data = ITEM_data(it);
 
     fence();
-    res = accel_set(&cachestats.accel, key, nkey, ITEM_data(it),
-            it->nbytes, count);
+    res = accel_set(&cachestats.accel, key, nkey, data, it->nbytes, count);
     if (res < 0)
 	syslog(LOG_WARNING, "Could not add key %s to accelerator\n", key);
-    else
-	syslog(LOG_INFO, "Key %s pushed to accelerator\n", key);
+    else {
+	syslog(LOG_INFO, "Key %s, value %s pushed to accelerator\n",
+			key, (char*) data);
+    }
 }
 
 static void prob_push(const char *key, const size_t nkey, const uint32_t hv) {
