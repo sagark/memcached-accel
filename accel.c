@@ -28,6 +28,8 @@ static long accel_add_entry(struct accel_state *accel,
     unsigned long search_end;
     unsigned long space;
 
+    syslog(LOG_INFO, "Looking up entry in table\n");
+
     entry = accel->entries[hash];
     if (entry == NULL) {
         entry = malloc(sizeof(struct sram_entry));
@@ -48,6 +50,7 @@ static long accel_add_entry(struct accel_state *accel,
     search = accel->head;
 
     if (search == NULL) {
+        syslog(LOG_INFO, "Adding first entry to list\n");
         accel->head = entry;
         entry->prev = NULL;
         entry->next = NULL;
@@ -56,6 +59,7 @@ static long accel_add_entry(struct accel_state *accel,
     }
 
     while (search != NULL) {
+        syslog(LOG_INFO, "Checking entry at address %lu\n", search->addr);
         search_end = search->addr + search->len;
         if (search->next == NULL)
             space = KVSTORE_SRAM_SIZE - search_end;
