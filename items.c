@@ -12,6 +12,7 @@
 #include <string.h>
 #include <time.h>
 #include <assert.h>
+#include <syslog.h>
 
 /* Forward Declarations */
 static void item_link_q(item *it);
@@ -23,6 +24,9 @@ static void item_unlink_q(item *it);
  * items.
  */
 #define ITEM_UPDATE_INTERVAL 60
+
+#define COUNT_PROB 8
+#define COUNT_MAX 63
 
 #define LARGEST_ID POWER_LARGEST
 typedef struct {
@@ -37,7 +41,12 @@ typedef struct {
 } itemstats_t;
 
 typedef struct {
-	struct accel_state accel;
+    struct accel_state accel;
+    uint64_t items_in;
+    size_t nkeys[100];
+    uint32_t hvs[100];
+    uint8_t counts[100];
+    char keys[100][256];
 } cachestats_t;
 
 static item *heads[LARGEST_ID];
@@ -55,8 +64,10 @@ void item_stats_reset(void) {
 void cache_stats_init(void)
 {
     accel_init(&cachestats.accel);
+    cachestats.items_in = 0;
+    srand(time(NULL));
+    openlog("memcached-accel", 0, LOG_DAEMON);
 }
-
 
 /* Get the next CAS id for a new item. */
 uint64_t get_cas_id(void) {
@@ -528,22 +539,58 @@ void do_item_stats_sizes(ADD_STAT add_stats, void *c) {
     add_stats(NULL, 0, NULL, 0, c);
 }
 
-static void push_to_accel(
-        const char *key, const size_t nkey, const uint32_t hv) {
+static void push_to_accel(int i) {
     int res;
     item *it;
+    char *key = cachestats.keys[i];
+    size_t nkey = cachestats.nkeys[i];
+    uint32_t hv = cachestats.hvs[i];
+    uint8_t count = cachestats.counts[i];
+
+    if (count > COUNT_MAX)
+	count = COUNT_MAX;
 
     it = assoc_find(key, nkey, hv);
     if (it == NULL) {
-        printf("Could not find value for key %s\n", key);
+        syslog(LOG_WARNING, "Could not find value for key %s\n", key);
+        return;
     }
 
     fence();
-    res = accel_set(&cachestats.accel, key, nkey, ITEM_data(it), it->nbytes, 0);
+    res = accel_set(&cachestats.accel, key, nkey, ITEM_data(it),
+            it->nbytes, count);
     if (res < 0)
-	fprintf(stderr, "Could not add key %s to accelerator\n", key);
+	syslog(LOG_WARNING, "Could not add key %s to accelerator\n", key);
     else
-	printf("Key %s pushed to accelerator\n", key);
+	syslog(LOG_INFO, "Key %s pushed to accelerator\n", key);
+}
+
+static void prob_push(const char *key, const size_t nkey, const uint32_t hv) {
+    if (rand() % COUNT_PROB == 0) {
+        bool inserted = false;
+        for(int i = 0; i < cachestats.items_in; ++i) {
+	    if (strcmp(cachestats.keys[i], key) == 0) {
+                cachestats.counts[i] += 1;
+                inserted = true;
+            }
+        }
+        if (!inserted) {
+	    strncpy(cachestats.keys[cachestats.items_in], key, nkey + 1);
+            cachestats.nkeys[cachestats.items_in] = nkey;
+            cachestats.hvs[cachestats.items_in] = hv;
+            cachestats.counts[cachestats.items_in] = 1;
+            cachestats.items_in += 1;
+        }
+    }
+    if (cachestats.items_in == 100) {
+	write_mode();
+        for (int i = 0; i < cachestats.items_in; ++i) {
+            push_to_accel(i);
+        }
+        cachestats.items_in = 0;
+	reset_counts();
+	read_mode();
+    }
 }
 
 /** wrapper around assoc_find which does the lazy expiration logic */
@@ -602,6 +649,9 @@ item *do_item_get(const char *key, const size_t nkey, const uint32_t hv) {
 
     if (settings.verbose > 2)
         fprintf(stderr, "\n");
+    
+    if (it != NULL)
+	prob_push(key, nkey, hv);
 
     return it;
 }

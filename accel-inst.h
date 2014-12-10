@@ -46,4 +46,8 @@ static inline void write_val(unsigned long hash, void *addr) {
                   : [hash] "r" (hash), [addr] "r" (addr));
 }
 
+static inline void reset_counts(void) {
+    asm volatile ("custom0 0, 0, 0, 6");
+}
+
 #endif
