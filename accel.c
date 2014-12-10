@@ -1,6 +1,7 @@
 #include "accel-inst.h"
 #include "accel.h"
 #include <string.h>
+#include <syslog.h>
 
 void accel_init(struct accel_state *accel) {
     memset(accel, 0, sizeof(*accel));
