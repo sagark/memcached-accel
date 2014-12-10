@@ -71,12 +71,21 @@ int accel_set(struct accel_state *accel,
     long accel_addr;
 
     hash = reserve_key((void*) key, weight, keylen);
-    if (hash == KVSTORE_NOT_FOUND)
+    if (hash == KVSTORE_NOT_FOUND) {
+	syslog(LOG_WARNING, "could not reserve hash for key %s\n", key);
         return -1;
+    }
+
+    syslog(LOG_INFO, "Key %s has hash %lu\n", key, hash);
 
     accel_addr = accel_add_entry(accel, hash, vallen);
-    if (accel_addr < 0)
+    if (accel_addr < 0) {
+        syslog(LOG_WARNING, "could not add entry for hash %lu\n", hash);
         return -1;
+    }
+
+    syslog(LOG_INFO, "Placing value of length %lu at address %lu\n",
+            vallen, accel_addr);
 
     assoc_addr(hash, accel_addr);
     assoc_len(hash, vallen);
