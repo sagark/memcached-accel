@@ -94,7 +94,7 @@ int accel_set(struct accel_state *accel,
     assoc_len(hash, vallen);
     write_val(hash, value);
 
-    syslog("Hash %u, Addr %u, Len: %u\n", hash, accel_addr, vallen);
+    syslog(LOG_INFO, "Hash %u, Addr %u, Len: %u\n", hash, accel_addr, vallen);
 
     return 0;
 }
