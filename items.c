@@ -568,7 +568,7 @@ static void push_to_accel(int i) {
 	syslog(LOG_WARNING, "Could not add key %s to accelerator\n", key);
     else {
 	syslog(LOG_INFO, "Key %s, value %s pushed to accelerator\n",
-			key, (char*) data);
+			key, (char*) value);
     }
 }
 
