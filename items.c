@@ -37,8 +37,7 @@ typedef struct {
 } itemstats_t;
 
 typedef struct {
-    item *items[10];
-    uint64_t items_in;
+	struct accel_state accel;
 } cachestats_t;
 
 static item *heads[LARGEST_ID];
@@ -51,6 +50,11 @@ void item_stats_reset(void) {
     mutex_lock(&cache_lock);
     memset(itemstats, 0, sizeof(itemstats));
     mutex_unlock(&cache_lock);
+}
+
+void cache_stats_init(void)
+{
+    accel_init(&cachestats.accel);
 }
 
 
@@ -524,20 +528,27 @@ void do_item_stats_sizes(ADD_STAT add_stats, void *c) {
     add_stats(NULL, 0, NULL, 0, c);
 }
 
-bool accel_key_decision(const char *key, const size_t nkey, const uint32_t hv) {
-    return true;
-}
+static void push_to_accel(
+        const char *key, const size_t nkey, const uint32_t hv) {
+    int res;
+    item *it;
 
-void push_to_accel(const char *key, const size_t nkey, const uint32_t hv) {
-    printf("Pushed to accelerator %s, %zu", key, cachestats.items_in);
+    it = assoc_find(key, nkey, hv);
+    if (it == NULL) {
+        printf("Could not find value for key %s\n", key);
+    }
+
+    fence();
+    res = accel_set(&cachestats.accel, key, nkey, ITEM_data(it), it->nbytes, 0);
+    if (res < 0)
+	fprintf(stderr, "Could not add key %s to accelerator\n", key);
+    else
+	printf("Key %s pushed to accelerator\n", key);
 }
 
 /** wrapper around assoc_find which does the lazy expiration logic */
 item *do_item_get(const char *key, const size_t nkey, const uint32_t hv) {
     //mutex_lock(&cache_lock);
-    if (accel_key_decision(key, nkey, hv)) {
-        push_to_accel(key, nkey, hv);
-    }
     item *it = assoc_find(key, nkey, hv);
     if (it != NULL) {
         refcount_incr(&it->refcount);

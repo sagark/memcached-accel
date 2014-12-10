@@ -184,6 +184,7 @@ static void stats_init(void) {
        values are now false in boolean context... */
     process_started = time(0) - 2;
     stats_prefix_init();
+    cache_stats_init();
 }
 
 static void stats_reset(void) {
