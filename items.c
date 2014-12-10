@@ -25,7 +25,7 @@ static void item_unlink_q(item *it);
  */
 #define ITEM_UPDATE_INTERVAL 60
 
-#define COUNT_PROB 8
+#define COUNT_PROB 1
 #define COUNT_MAX 63
 
 #define LARGEST_ID POWER_LARGEST
