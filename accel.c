@@ -45,6 +45,15 @@ static long accel_add_entry(struct accel_state *accel,
     }
 
     search = accel->head;
+
+    if (search == NULL) {
+        accel->head = entry;
+        entry->prev = NULL;
+        entry->next = NULL;
+        entry->addr = 0;
+        return 0;
+    }
+
     while (search != NULL) {
         search_end = search->addr + search->len;
         if (search->next == NULL)
