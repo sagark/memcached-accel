@@ -93,7 +93,9 @@ int accel_set(struct accel_state *accel,
 
     fence();
     assoc_addr(hash, accel_addr);
+    fence();
     assoc_len(hash, vallen);
+    fence();
     write_val(hash, value);
 
     syslog(LOG_INFO, "Hash %lu, Addr %ld, Len: %lu\n", hash, accel_addr, vallen);
