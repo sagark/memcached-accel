@@ -34,6 +34,7 @@ static long accel_add_entry(struct accel_state *accel,
         if (entry == NULL)
             return -1;
         entry->len = len;
+        accel->entries[hash] = entry;
     } else if (can_resize(entry, len)) {
         entry->len = len;
         return entry->addr;
