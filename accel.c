@@ -1,6 +1,7 @@
 #include "accel-inst.h"
 #include "accel.h"
 #include <string.h>
+#include <syslog.h>
 
 void accel_init(struct accel_state *accel) {
     memset(accel, 0, sizeof(*accel));
@@ -92,6 +93,8 @@ int accel_set(struct accel_state *accel,
     assoc_addr(hash, accel_addr);
     assoc_len(hash, vallen);
     write_val(hash, value);
+
+    syslog("Hash %u, Addr %u, Len: %u\n", hash, accel_addr, vallen);
 
     return 0;
 }
