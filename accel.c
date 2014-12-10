@@ -82,6 +82,7 @@ int accel_set(struct accel_state *accel,
     unsigned long hash;
     long accel_addr;
 
+    fence();
     hash = reserve_key((void*) key, weight, keylen);
     if (hash == KVSTORE_NOT_FOUND)
         return -1;
@@ -90,6 +91,7 @@ int accel_set(struct accel_state *accel,
     if (accel_addr < 0)
         return -1;
 
+    fence();
     assoc_addr(hash, accel_addr);
     assoc_len(hash, vallen);
     write_val(hash, value);

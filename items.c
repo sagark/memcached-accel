@@ -562,7 +562,6 @@ static void push_to_accel(int i) {
     value = ITEM_data(it);
     vallen = it->nbytes - 2;
 
-    fence();
     res = accel_set(&cachestats.accel, key, nkey, value, vallen, count);
     if (res < 0)
 	syslog(LOG_WARNING, "Could not add key %s to accelerator\n", key);
