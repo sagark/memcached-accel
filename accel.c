@@ -1,7 +1,6 @@
 #include "accel-inst.h"
 #include "accel.h"
 #include <string.h>
-#include <syslog.h>
 
 void accel_init(struct accel_state *accel) {
     memset(accel, 0, sizeof(*accel));
@@ -28,8 +27,6 @@ static long accel_add_entry(struct accel_state *accel,
     unsigned long search_end;
     unsigned long space;
 
-    syslog(LOG_INFO, "Looking up entry in table\n");
-
     entry = accel->entries[hash];
     if (entry == NULL) {
         entry = malloc(sizeof(struct sram_entry));
@@ -50,7 +47,6 @@ static long accel_add_entry(struct accel_state *accel,
     search = accel->head;
 
     if (search == NULL) {
-        syslog(LOG_INFO, "Adding first entry to list\n");
         accel->head = entry;
         entry->prev = NULL;
         entry->next = NULL;
@@ -59,7 +55,6 @@ static long accel_add_entry(struct accel_state *accel,
     }
 
     while (search != NULL) {
-        syslog(LOG_INFO, "Checking entry at address %lu\n", search->addr);
         search_end = search->addr + search->len;
         if (search->next == NULL)
             space = KVSTORE_SRAM_SIZE - search_end;
@@ -87,21 +82,12 @@ int accel_set(struct accel_state *accel,
     long accel_addr;
 
     hash = reserve_key((void*) key, weight, keylen);
-    if (hash == KVSTORE_NOT_FOUND) {
-	syslog(LOG_WARNING, "could not reserve hash for key %s\n", key);
+    if (hash == KVSTORE_NOT_FOUND)
         return -1;
-    }
-
-    syslog(LOG_INFO, "Key %s has hash %lu\n", key, hash);
 
     accel_addr = accel_add_entry(accel, hash, vallen);
-    if (accel_addr < 0) {
-        syslog(LOG_WARNING, "could not add entry for hash %lu\n", hash);
+    if (accel_addr < 0)
         return -1;
-    }
-
-    syslog(LOG_INFO, "Placing value of length %lu at address %lu\n",
-            vallen, accel_addr);
 
     assoc_addr(hash, accel_addr);
     assoc_len(hash, vallen);
