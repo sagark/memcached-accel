@@ -66,7 +66,8 @@ void cache_stats_init(void)
     accel_init(&cachestats.accel);
     cachestats.items_in = 0;
     srand(time(NULL));
-    openlog("memcached-accel", 0, LOG_DAEMON);
+    openlog("memcached-accel", 0, LOG_USER);
+    syslog(LOG_INFO, "Started logging\n");
 }
 
 /* Get the next CAS id for a new item. */
