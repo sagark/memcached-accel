@@ -365,6 +365,12 @@ void do_item_unlink_nolock(item *it, const uint32_t hv) {
 }
 
 void do_item_remove(item *it) {
+    // delete from accelerator
+    write_mode();
+    del_key(ITEM_key(it), it->nkey);
+    read_mode();
+    syslog(LOG_INFO, "Key %s, removed from accelerator due to delete.\n", ITEM_key(it));
+
     MEMCACHED_ITEM_REMOVE(ITEM_key(it), it->nkey, it->nbytes);
     assert((it->it_flags & ITEM_SLABBED) == 0);
     assert(it->refcount > 0);
