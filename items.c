@@ -576,7 +576,7 @@ static void push_to_accel(int i) {
     value = ITEM_data(it);
     vallen = it->nbytes - 2;
 
-    res = accel_set(&cachestats.accel, key, nkey, value, vallen, 0);
+    res = accel_set(&cachestats.accel, key, nkey, value, vallen, count);
     if (res < 0)
 	syslog(LOG_WARNING, "Could not add key %s to accelerator\n", key);
     else {
@@ -586,8 +586,6 @@ static void push_to_accel(int i) {
 }
 
 static void prob_push(const char *key, const size_t nkey, const uint32_t hv) {
-    if (cachestats.items_in == 100)
-	    return;
     if (rand() % COUNT_PROB == 0) {
         bool inserted = false;
         for(int i = 0; i < cachestats.items_in; ++i) {
@@ -609,7 +607,7 @@ static void prob_push(const char *key, const size_t nkey, const uint32_t hv) {
         for (int i = 0; i < cachestats.items_in; ++i) {
             push_to_accel(i);
         }
-        //cachestats.items_in = 0;
+        cachestats.items_in = 0;
 	reset_counts();
 	read_mode();
     }
