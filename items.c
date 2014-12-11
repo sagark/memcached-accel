@@ -387,6 +387,7 @@ void do_item_update(item *it) {
         }
         mutex_unlock(&cache_lock);
     }
+
 }
 
 int do_item_replace(item *it, item *new_it, const uint32_t hv) {
@@ -395,6 +396,13 @@ int do_item_replace(item *it, item *new_it, const uint32_t hv) {
     assert((it->it_flags & ITEM_SLABBED) == 0);
 
     do_item_unlink(it, hv);
+
+    write_mode();
+    del_key(ITEM_key(it), it->nkey);
+    read_mode();
+
+    syslog(LOG_INFO, "Key %s, removed from accelerator due to value change.\n", ITEM_key(it));
+
     return do_item_link(new_it, hv);
 }
 
