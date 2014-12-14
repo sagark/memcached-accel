@@ -403,12 +403,18 @@ int do_item_replace(item *it, item *new_it, const uint32_t hv) {
 
     do_item_unlink(it, hv);
 
-    write_mode();
-    del_key(ITEM_key(it), it->nkey);
-    read_mode();
+    int checklen = it->nbytes < new_it->nbytes ? it->nbytes : new_it->nbytes;
+    int checkflag = 1;
 
-    syslog(LOG_INFO, "Key %s, removed from accelerator due to value change.\n", ITEM_key(it));
-
+    for (int i = 0; i < checklen; i++) {
+        checkflag &= ITEM_data(it)[i] == ITEM_data(new_it)[i];
+    }
+    if (!checkflag) {
+        write_mode();
+        del_key(ITEM_key(it), it->nkey);
+        read_mode();
+        syslog(LOG_INFO, "Key %s, removed from accelerator due to value change.\n", ITEM_key(it));
+    } 
     return do_item_link(new_it, hv);
 }
 
