@@ -366,10 +366,15 @@ void do_item_unlink_nolock(item *it, const uint32_t hv) {
 
 void do_item_remove(item *it) {
     // delete from accelerator
-    write_mode();
+
+    // TODO: this was removed because it seems to also be called when slabs are
+    // rebalanced. we will just not support explicit deletes for now.
+    //
+    // FIX: need to add a flag passed in when the inst is an explicit delete
+/*    write_mode();
     del_key(ITEM_key(it), it->nkey);
     read_mode();
-    syslog(LOG_INFO, "Key %s, removed from accelerator due to delete.\n", ITEM_key(it));
+    syslog(LOG_INFO, "Key %s, removed from accelerator due to delete.\n", ITEM_key(it));*/
 
     MEMCACHED_ITEM_REMOVE(ITEM_key(it), it->nkey, it->nbytes);
     assert((it->it_flags & ITEM_SLABBED) == 0);
