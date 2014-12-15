@@ -408,18 +408,25 @@ int do_item_replace(item *it, item *new_it, const uint32_t hv) {
 
     do_item_unlink(it, hv);
 
-    int checklen = it->nbytes < new_it->nbytes ? it->nbytes : new_it->nbytes;
-    int checkflag = 1;
+    int equal_so_far = it->nbytes == new_it->nbytes;
 
-    for (int i = 0; i < checklen; i++) {
-        checkflag &= ITEM_data(it)[i] == ITEM_data(new_it)[i];
+    if (equal_so_far) {
+        int checklen = it->nbytes < new_it->nbytes ? it->nbytes : new_it->nbytes;
+        for (int i = 0; i < checklen; i++) {
+            if (ITEM_data(it)[i] != ITEM_data(new_it)[i]) {
+                equal_so_far = 0;
+                break;
+            }
+        }
     }
-    if (!checkflag) {
+
+    if (!equal_so_far) {
         write_mode();
         del_key(ITEM_key(it), it->nkey);
         read_mode();
         syslog(LOG_INFO, "Key %s, removed from accelerator due to value change.\n", ITEM_key(it));
     } 
+
     return do_item_link(new_it, hv);
 }
 
